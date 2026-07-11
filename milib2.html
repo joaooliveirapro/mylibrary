@@ -1,0 +1,942 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Mi librería</title>
+<style>
+  :root{
+    --accent:#3b5bdb;
+    --accent-light:#eef1fb;
+    --text:#1f2430;
+    --muted:#6b7280;
+    --border:#e2e5ee;
+  }
+  body{
+    font-family: "Segoe UI", Helvetica, Arial, sans-serif;
+    background:#f7f8fc;
+    color:var(--text);
+    margin:0;
+    padding:40px 20px;
+  }
+  h1{
+    text-align:center;
+    font-size:1.8rem;
+    margin-bottom:4px;
+  }
+  p.subtitle{
+    text-align:center;
+    color:var(--muted);
+    margin-top:0;
+    margin-bottom:20px;
+  }
+  .legend{
+    text-align:center;
+    margin-bottom:20px;
+    font-size:1.2rem;
+    color:var(--muted);
+  }
+  .legend span{
+    display:inline-block;
+    margin:0 10px;
+  }
+
+  /* ---------- Tabs ---------- */
+  .tabs{
+    max-width:1150px;
+    margin:0 auto 20px;
+    display:flex;
+    justify-content:center;
+    gap:8px;
+  }
+  .tab-btn{
+    border:1px solid var(--border);
+    background:#fff;
+    color:var(--muted);
+    padding:8px 18px;
+    border-radius:999px;
+    font-size:0.95rem;
+    font-weight:600;
+    cursor:pointer;
+    transition:all .15s;
+  }
+  .tab-btn:hover{ border-color:var(--accent); color:var(--accent); }
+  .tab-btn.active{ background:var(--accent); border-color:var(--accent); color:#fff; }
+  .view{ display:none; }
+  .view.active{ display:block; }
+
+  /* ---------- Table ---------- */
+  table{
+    width:100%;
+    max-width:1150px;
+    margin:0 auto;
+    border-collapse:collapse;
+    background:#fff;
+    box-shadow:0 2px 10px rgba(0,0,0,0.06);
+    border-radius:10px;
+    overflow:hidden;
+  }
+  th, td{
+    padding:12px 14px;
+    border-bottom:1px solid var(--border);
+    text-align:left;
+    font-size:1.2rem;
+    vertical-align:top;
+  }
+  th{
+    background:var(--accent);
+    color:#fff;
+    font-weight:600;
+    cursor:pointer;
+    user-select:none;
+    white-space:nowrap;
+    position:relative;
+  }
+  th:hover{ background:#3349b8; }
+  th .arrow{
+    display:inline-block;
+    margin-left:6px;
+    opacity:0.5;
+    font-size:0.8rem;
+  }
+  th.sorted-asc .arrow,
+  th.sorted-desc .arrow{ opacity:1; }
+  td.author{
+    font-weight:600;
+    background:var(--accent-light);
+    border-right:2px solid var(--accent);
+  }
+  td.notas{
+    font-style:italic;
+    color:#444;
+    font-size:0.87rem;
+  }
+  td.status-leido{ color:#1a7f37; font-weight:600; }
+  td.status-leyendo{ color:#b8860b; font-weight:600; }
+  td.status-noleido{ color:var(--muted); }
+  tbody tr.group-start td{ border-top:2px solid var(--border); }
+  tbody tr:first-child td{ border-top:none; }
+
+  /* ---------- Gallery ---------- */
+  .gallery-wrap{ max-width:1150px; margin:0 auto; }
+  .author-group{ margin-bottom:34px; }
+  .author-heading{
+    display:flex;
+    align-items:baseline;
+    gap:10px;
+    margin:0 0 14px;
+    padding-bottom:8px;
+    border-bottom:2px solid var(--accent);
+  }
+  .author-heading h2{
+    font-size:1.15rem;
+    margin:0;
+    color:var(--accent);
+  }
+  .author-heading .count{
+    font-size:0.85rem;
+    color:var(--muted);
+  }
+  .card-grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fill, minmax(150px, 1fr));
+    gap:18px;
+  }
+  .book-card{
+    cursor:pointer;
+    background:#fff;
+    border-radius:10px;
+    box-shadow:0 2px 8px rgba(0,0,0,0.08);
+    overflow:hidden;
+    transition:transform .15s, box-shadow .15s;
+    display:flex;
+    flex-direction:column;
+  }
+  .book-card:hover{
+    transform:translateY(-4px);
+    box-shadow:0 8px 18px rgba(0,0,0,0.14);
+  }
+  .book-card .cover{
+    width:100%;
+    aspect-ratio:2/3;
+    object-fit:cover;
+    background:var(--accent-light);
+    display:block;
+  }
+  .book-card .info{
+    padding:10px 12px 12px;
+    flex:1;
+    display:flex;
+    flex-direction:column;
+    gap:4px;
+  }
+  .book-card .title{
+    font-size:0.92rem;
+    font-weight:600;
+    line-height:1.25;
+  }
+  .book-card .stars{
+    font-size:0.85rem;
+    color:#e8a83a;
+    letter-spacing:1px;
+  }
+  .book-card .stars.empty{ color:var(--muted); font-style:italic; font-size:0.75rem; letter-spacing:0; }
+  .book-card .status-badge{
+    align-self:flex-start;
+    font-size:0.7rem;
+    padding:2px 8px;
+    border-radius:999px;
+    background:var(--accent-light);
+    color:var(--accent);
+    font-weight:600;
+  }
+
+  /* ---------- A–Z scrollspy ---------- */
+  .az-nav{
+    display:none;
+    position:fixed;
+    right:14px;
+    top:50%;
+    transform:translateY(-50%);
+    flex-direction:column;
+    align-items:center;
+    gap:1px;
+    background:#fff;
+    padding:10px 5px;
+    border-radius:14px;
+    box-shadow:0 4px 16px rgba(0,0,0,0.12);
+    z-index:50;
+  }
+  .az-nav.visible{ display:flex; }
+  .az-nav button{
+    border:none;
+    background:none;
+    font-size:0.68rem;
+    line-height:1.5;
+    width:20px;
+    padding:0;
+    cursor:pointer;
+    color:var(--muted);
+    border-radius:4px;
+    font-weight:600;
+  }
+  .az-nav button:hover{ background:var(--accent-light); color:var(--accent); }
+  .az-nav button.disabled{
+    opacity:0.25;
+    cursor:default;
+    pointer-events:none;
+  }
+  .az-nav button.active{
+    background:var(--accent);
+    color:#fff;
+  }
+  @media (max-width: 700px){
+    .az-nav{ right:4px; padding:6px 3px; }
+    .az-nav button{ width:16px; font-size:0.6rem; }
+  }
+
+  /* ---------- Library (shelf) view ---------- */
+  .shelf-wrap{
+    max-width:1150px;
+    margin:0 auto;
+    display:flex;
+    flex-wrap:wrap;
+    align-items:flex-end;
+    gap:6px;
+    padding:20px 16px 10px;
+    background:
+      repeating-linear-gradient(to bottom,
+        transparent 0, transparent 205px,
+        #8a5a34 205px, #8a5a34 213px,
+        #6b4423 213px, #6b4423 216px);
+    border-radius:8px;
+  }
+  .shelf-letter{
+    align-self:flex-end;
+    height:60px;
+    width:32px;
+    flex:0 0 auto;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    background:var(--accent);
+    color:#fff;
+    font-size:1.1rem;
+    font-weight:800;
+    border-radius:6px 6px 2px 2px;
+    box-shadow:0 2px 4px rgba(0,0,0,0.25) inset, 0 3px 6px rgba(0,0,0,0.2);
+    margin-bottom:9px;
+  }
+  .spine{
+    align-self:flex-end;
+    flex:0 0 auto;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    border-radius:3px 3px 1px 1px;
+    box-shadow:inset -2px 0 4px rgba(0,0,0,0.25), inset 2px 0 3px rgba(255,255,255,0.15), 0 3px 6px rgba(0,0,0,0.22);
+    cursor:pointer;
+    position:relative;
+    margin-bottom:9px;
+    padding:8px 0;
+    overflow:hidden;
+    transition:transform .15s;
+  }
+  .spine:hover{ transform:translateY(-6px); }
+  .spine .spine-title{
+    writing-mode: vertical-rl;
+    text-orientation: mixed;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    max-height:calc(100% - 20px);
+    margin-top:16px;
+    color:#fff;
+    font-weight:600;
+    letter-spacing:0.2px;
+    text-shadow:0 1px 2px rgba(0,0,0,0.35);
+  }
+  .spine .spine-status{
+    position:absolute;
+    top:5px;
+    left:50%;
+    transform:translateX(-50%);
+    font-size:0.6rem;
+    line-height:1;
+  }
+  .spine .spine-tfdms{
+    position:absolute;
+    bottom:0;
+    left:0;
+    right:0;
+    height:5px;
+  }
+  .spine.spine-unread{
+    filter:grayscale(0.9) brightness(1.15);
+    opacity:0.55;
+  }
+  .spine.spine-unread:hover{ opacity:0.8; }
+
+  /* ---------- Modal ---------- */
+  .modal-overlay{
+    display:none;
+    position:fixed;
+    inset:0;
+    background:rgba(20,22,30,0.55);
+    align-items:center;
+    justify-content:center;
+    z-index:100;
+    padding:20px;
+  }
+  .modal-overlay.active{ display:flex; }
+  .modal{
+    background:#fff;
+    border-radius:14px;
+    max-width:640px;
+    width:100%;
+    max-height:85vh;
+    overflow-y:auto;
+    padding:28px 30px;
+    position:relative;
+    box-shadow:0 20px 50px rgba(0,0,0,0.25);
+  }
+  .modal-close{
+    position:absolute;
+    top:14px;
+    right:16px;
+    border:none;
+    background:none;
+    font-size:1.4rem;
+    cursor:pointer;
+    color:var(--muted);
+    line-height:1;
+  }
+  .modal-close:hover{ color:var(--text); }
+  .modal h2{ margin:0 0 2px; font-size:1.3rem; }
+  .modal .modal-author{ color:var(--muted); margin:0 0 10px; font-size:0.95rem; }
+  .modal .modal-meta{
+    display:flex;
+    flex-wrap:wrap;
+    gap:8px;
+    margin-bottom:14px;
+  }
+  .modal .modal-meta span{
+    font-size:0.78rem;
+    background:var(--accent-light);
+    color:var(--accent);
+    padding:3px 10px;
+    border-radius:999px;
+    font-weight:600;
+  }
+  .modal .modal-stars{ font-size:1.2rem; color:#e8a83a; margin-bottom:14px; letter-spacing:2px; }
+  .modal .modal-review{ font-size:0.95rem; line-height:1.55; color:#333; }
+  .modal .modal-review p{ margin:0 0 10px; }
+  .modal .modal-review:empty::before{ content:"Sin reseña todavía."; color:var(--muted); font-style:italic; }
+</style>
+</head>
+<body>
+
+<h1>📚 Mi librería</h1>
+<p class="subtitle" id="subtitle"></p>
+<p class="legend">
+  <span>✅ Leído</span>
+  <span>📖 Leyendo</span>
+  <span>⏳ No leído</span>
+</p>
+
+<div class="tabs">
+  <button class="tab-btn active" data-view="table">Tabla</button>
+  <button class="tab-btn" data-view="gallery">Galería</button>
+  <button class="tab-btn" data-view="library">Library</button>
+</div>
+
+<!-- ============ TABLE VIEW ============ -->
+<div class="view active" id="view-table">
+  <table id="bookTable">
+    <thead>
+      <tr>
+        <th data-field="autor" data-type="text">Autor<span class="arrow">⇕</span></th>
+        <th data-field="titulo" data-type="text">Título<span class="arrow">⇕</span></th>
+        <th data-field="estado" data-type="text">Estado<span class="arrow">⇕</span></th>
+        <th data-field="genero" data-type="text">Género<span class="arrow">⇕</span></th>
+        <th data-field="ano" data-type="number">Año<span class="arrow">⇕</span></th>
+        <th data-field="paginas" data-type="number">Págs.<span class="arrow">⇕</span></th>
+        <th data-field="tfdms" data-type="number">TF-DMS<span class="arrow">⇕</span></th>
+        <th data-field="notas" data-type="text">Notas<span class="arrow">⇕</span></th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+</div>
+
+<!-- ============ GALLERY VIEW ============ -->
+<div class="view" id="view-gallery">
+  <div class="gallery-wrap" id="galleryWrap"></div>
+  <nav class="az-nav" id="azNav"></nav>
+</div>
+
+<!-- ============ LIBRARY VIEW (bookshelf) ============ -->
+<div class="view" id="view-library">
+  <div class="shelf-wrap" id="shelfWrap"></div>
+</div>
+
+<!-- ============ REVIEW MODAL ============ -->
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal">
+    <button class="modal-close" id="modalClose">✕</button>
+    <h2 id="modalTitle"></h2>
+    <p class="modal-author" id="modalAuthor"></p>
+    <div class="modal-meta" id="modalMeta"></div>
+    <div class="modal-stars" id="modalStars"></div>
+    <div class="modal-review" id="modalReview"></div>
+  </div>
+</div>
+
+<script>
+/* =========================================================
+   DATOS — pega aquí tu array `books` (con la propiedad `img`
+   ya incluida en cada libro). Todo el código de abajo asume
+   que cada objeto puede tener:
+     autor, titulo, estado ("✅"|"📖"|"⏳"), genero,
+     ano, ano_texto (opcional), paginas, tfdms, notas, img
+   ========================================================= */
+const books = [
+
+  /* ── LEÍDOS ── */
+  { "img":"https://placehold.co/200x320", "autor":"Agustina Bazterrica","titulo":"Cadáver exquisito","estado":"✅","genero":"Horror","ano":2017,"notas":"⭐⭐⭐⭐⭐ <p>Agustina logró incomodarme lo suficiente para tener que reposar el libro, con certa frecuencia, y pensar en lo que estaba ocurriendo.</p><p>La ironía de celebrar una nueva vida con un asado de carne 'especial' de bebé. Lo más desconcertante que he leído.</p>","paginas":192,"tfdms":9},
+  { "img":"https://placehold.co/200x320", "autor":"Joël Dicker","titulo":"La verdad sobre el caso de Harry Quebert","estado":"✅","genero":"Thriller","ano":2012,"notas":"⭐⭐ <p>El final llegó demasiado rápido, como si el escritor hubiera querido terminarlo lo antes posible, cómo si él mismo se hubiera aburrido de la historia.</p><p>Mucho suspense y intriga - a veces, incluso, con repeticiones interminables - para un desarollo anémico e insatisfactorio.</p>","paginas":790,"tfdms":2},
+  { "img":"https://placehold.co/200x320", "autor":"Jacqueline Harpman","titulo":"I who have never known men","estado":"✅","genero":"Distopía","ano":1995,"notas":"⭐⭐⭐⭐ <p>Incredibly sad - no answers, ever. She died without answers to her most mundane life questions: what happened and why? what was her name? where was she? - despite all her walking, perserverance and, at times, faith.</p><p>Luckily, she's now in peace, freed from questioning her own existence, while we - her readers, who have inherited her thoughts - have no option but to carry on and cope with the burden of unsatisfiable curiosity, as we walk poetically across the vast plain of time toward our own death.</p><p>As Dostoevsky put it: 'All this effort to die on a random Wednesday'.</p>","paginas":185,"tfdms":6},
+  { "img":"https://placehold.co/200x320", "autor":"Margaret Atwood","titulo":"El cuento de la criada","estado":"✅","genero":"Distopía","ano":1985,"notas":"⭐⭐⭐⭐","paginas":400,"tfdms":8},
+  { "img":"https://placehold.co/200x320", "autor":"Jack Ketchum","titulo":"La chica de al lado","estado":"✅","genero":"Horror","ano":1989,"notas":"⭐⭐⭐⭐⭐ <p>Una historia que destuye el alma por su crueltad, veracidad y, al contrario de lo que escribe Jack, sin un final real a gusto.</p><p>Es posible, a través de este libro, conocer lo más macabro de la maldad humana y entender que hay injusticias que jamás serán corregidas.</p><p>Este libro nos regala mucho más de lo que se espera: la historia de Sylvia, por supuesto, pero también su dolor, su desespero, su rabia e injusticia.</p><p>Al menos para mí, me resulta imposible, a cada oportunidad social que se me presente, no sentir la necesidad de exponer su historia, de contarla a alguien más. No porque crea que llegará alguna forma de justicia divina, sino porque anhelo que alguien más cargue con una pequeña parte del dolor que he heredado.</p><p>Q.E.P.D. S.L.</p>","paginas":290,"tfdms":9},
+  { "img":"https://placehold.co/200x320", "autor":"José Rodrigues dos Santos","titulo":"O protocolo do caos","estado":"✅","genero":"Thriller","ano":2024,"notas":"⭐⭐⭐","paginas":384,"tfdms":2},
+  { "img":"https://placehold.co/200x320", "autor":"Paul Pen","titulo":"El brillo de las luciérnagas","estado":"✅","genero":"Thriller psicológico","ano":2013,"notas":"⭐⭐⭐⭐","paginas":368,"tfdms":6},
+  { "img":"https://placehold.co/200x320", "autor":"Alex Michaelides","titulo":"The silent patient","estado":"✅","genero":"Thriller psicológico","ano":2019,"notas":"⭐⭐⭐⭐⭐ <p>Increíble el <i>plot twist</i>, lo amé.</p><p>El desarollo de los personajes, la constancia de la intriga y de su silencio, el puñetazo que fue descubrir la verdad. En suma, lo adictivo y chocante que fue leer esta historia.</p>","paginas":336,"tfdms":4},
+  { "img":"https://placehold.co/200x320", "autor":"Fiódor Dostoyevski","titulo":"Noches blancas","estado":"✅","genero":"Novela filosófica","ano":1848,"notas":"⭐⭐⭐⭐ <p>Fenomenal, corto pero intenso. Pobre solitario soñador, como empenzó y terminó solo, a pesar de su condición de amar a su dichosa Nástenka.</p><p>La vida es así de compleja. En inglés se dice: <u>Ignorance is bliss; for what the heart can't know, it shan't feel it</u>. El soñador sí siente, mucho y es consciente de su soledad y del futuro que le espera.</p>","paginas":96,"tfdms":1},
+  { "img":"https://placehold.co/200x320", "autor":"Albert Camus","titulo":"El extranjero","estado":"✅","genero":"Novela filosófica","ano":1942,"notas":"⭐⭐⭐⭐ <p>Si algo aprendí al haber leído este líbro, es que al llevarse la vida de una manera tan nihílista o desinteresada, uno termina perdiendo la cabeza.</p> <p>La farza del juício social, donde el crímen más severo es el de no reaccionar, de llevarse la vida como un absurdo sin sentido ni razón, y el más culpable el estoico que se resigna a crear o mantener ninguna apariencia, pese al muerto a cinco tiros.</p> <p>Una sociedad que no está lista, ni para la verdad, ni mucho menos para la ausencia de la mentira.</p>","paginas":119,"tfdms":6},
+  { "img":"https://placehold.co/200x320", "autor":"Freida McFadden","titulo":"Nunca mientas","estado":"✅","genero":"Thriller psicológico","ano":2022,"notas":"⭐⭐⭐ <p>La primera mitad contiene demasiados <i>clichets</i> que me resultaron muy aburridos y obvios. A lo mejor es su estilo de escrita... espero que no! </p><p>La segunda mitad estuvo muy interesante. El giro dramatico de los acontecimientos fue inesperado y de cierta manera aterrador.</p><p>Le regalo 4 estrellas pues, para mí, le faltó un poco más de originalidad en ciertos puntos: los <i>clichets</i> que todos usan, el motivo de la muerte de los amigos y del ex, el motivo por lo cuál la Dra se quería encargar de E.J. - todo ello me pareció muy ordinário.</p><p>El final peca por lo mismo - viven felices para siempre, con dos muertos en el jardin que les abonan sus plantas.</p><p>Cuánto más pienso en ello, menos me gusta... dejémoslo así. Voy a por La Sirvienta.</p>","paginas":352,"tfdms":4},
+  { "img":"https://placehold.co/200x320", "autor":"Pierre Lemaitre","titulo":"Irène","estado":"✅","genero":"Novela policíaca","ano":2006,"notas":"⭐⭐⭐⭐⭐ <p>Lo siento; le pido disculpas al autor por haber empezado el libro con expectativas distintas, pidiéndole y cobrándole algo que nunca me debía.</p><p>Me siento orgulloso por haber tenido coraje y constancia de leer. He tenido fe que el autor haría justicia a las advertencias que me han brindado y que me llevaron a coger su libro.</p><p>Superó todas mis expectativas del <i>plot twist</i>, de tal manera que veo en mi reacción de repudio y horror al terminarlo de leer, la ironía de mi constancia y fe.</p><p>Lo único que me queda por preguntar es: por qué me hago esto? 🫠</p>","paginas":430,"tfdms":7},
+
+  /* ── NO LEÍDOS ── */
+  { "img":"https://placehold.co/200x320", "autor":"Margaret Atwood","titulo":"Los testamentos","estado":"⏳","genero":"Distopía","ano":2019,"notas":"","paginas":419,"tfdms":7},
+  { "img":"https://placehold.co/200x320", "autor":"John Steinbeck","titulo":"Of mice and men","estado":"⏳","genero":"Novela literaria / Drama","ano":1937,"notas":"","paginas":112,"tfdms":6},
+  { "img":"https://placehold.co/200x320", "autor":"Fiódor Dostoyevski","titulo":"The brothers Karamazov","estado":"⏳","genero":"Ficción psicológica","ano":1880,"notas":"","paginas":1130,"tfdms":6},
+  { "img":"https://placehold.co/200x320", "autor":"Marco Aurelio","titulo":"Meditaciones","estado":"⏳","genero":"Filosofía / Ensayo","ano":180,"ano_texto":"~180 d.C.","notas":"","paginas":254,"tfdms":0},
+  { "img":"https://placehold.co/200x320", "autor":"Monica Arya","titulo":"The favorite girl","estado":"⏳","genero":"Thriller psicológico","ano":2024,"notas":"","paginas":320,"tfdms":5},
+  { "img":"https://placehold.co/200x320", "autor":"Lucinda Berry","titulo":"The perfect child","estado":"⏳","genero":"Thriller psicológico","ano":2019,"notas":"","paginas":352,"tfdms":5},
+  { "img":"https://placehold.co/200x320", "autor":"Poppy Z. Brite","titulo":"Exquisite corpse","estado":"⏳","genero":"Horror","ano":1996,"notas":"","paginas":176,"tfdms":9},
+  { "img":"https://placehold.co/200x320", "autor":"Ray Bradbury","titulo":"Fahrenheit 451","estado":"⏳","genero":"Distopía","ano":1953,"notas":"","paginas":158,"tfdms":0},
+  { "img":"https://placehold.co/200x320", "autor":"Anthony Burgess","titulo":"La naranja mecánica","estado":"⏳","genero":"Distopía","ano":1962,"notas":"","paginas":192,"tfdms":8},
+  { "img":"https://placehold.co/200x320", "autor":"Charles Bukowski","titulo":"La senda del perdedor","estado":"⏳","genero":"Novela literaria / Drama","ano":1982,"notas":"","paginas":243,"tfdms":5},
+  { "img":"https://placehold.co/200x320", "autor":"Rodrigo Guedes de Carvalho","titulo":"Matarás um culpado e dois inocentes","estado":"⏳","genero":"Novela literaria / Drama","ano":2024,"notas":"","paginas":280,"tfdms":4},
+  { "img":"https://placehold.co/200x320", "autor":"Philip K. Dick","titulo":"The man in the high castle","estado":"⏳","genero":"Distopía","ano":1962,"notas":"","paginas":259,"tfdms":4},
+  { "img":"https://placehold.co/200x320", "autor":"Joël Dicker","titulo":"Un animal sauvage","estado":"⏳","genero":"Thriller psicológico","ano":2024,"notas":"","paginas":336,"tfdms":4},
+  { "img":"https://placehold.co/200x320", "autor":"Fiódor Dostoyevski","titulo":"Crimen y castigo","estado":"⏳","genero":"Thriller psicológico","ano":1866,"notas":"","paginas":545,"tfdms":7},
+  { "img":"https://placehold.co/200x320", "autor":"Sara Ennis","titulo":"Little doves","estado":"⏳","genero":"Thriller psicológico","ano":2022,"notas":"","paginas":310,"tfdms":6},
+  { "img":"https://placehold.co/200x320", "autor":"Robert Ford","titulo":"Burner","estado":"⏳","genero":"Horror","ano":2020,"notas":"","paginas":248,"tfdms":6},
+  { "img":"https://placehold.co/200x320", "autor":"Patric Gagne","titulo":"Sociopath: a memoir","estado":"⏳","genero":"Filosofía / Ensayo","ano":2024,"notas":"","paginas":352,"tfdms":4},
+  { "img":"https://placehold.co/200x320", "autor":"Eduardo Galeano","titulo":"El libro de los abrazos","estado":"⏳","genero":"Novela literaria / Drama","ano":1989,"notas":"","paginas":270,"tfdms":1},
+  { "img":"https://placehold.co/200x320", "autor":"Gabriel García Márquez","titulo":"Cien años de soledad","estado":"⏳","genero":"Realismo mágico","ano":1967,"notas":"","paginas":432,"tfdms":3},
+  { "img":"https://placehold.co/200x320", "autor":"William Gibson","titulo":"Neuromancer","estado":"⏳","genero":"Ciencia ficción","ano":1984,"notas":"","paginas":271,"tfdms":2},
+  { "img":"https://placehold.co/200x320", "autor":"William Gibson","titulo":"Count Zero","estado":"⏳","genero":"Ciencia ficción","ano":1986,"notas":"","paginas":246,"tfdms":2},
+  { "img":"https://placehold.co/200x320", "autor":"William Gibson","titulo":"Burning Chrome","estado":"⏳","genero":"Ciencia ficción","ano":1986,"notas":"","paginas":213,"tfdms":2},
+  { "img":"https://placehold.co/200x320", "autor":"William Gibson","titulo":"Mona Lisa Overdrive","estado":"⏳","genero":"Ciencia ficción","ano":1988,"notas":"","paginas":308,"tfdms":2},
+  { "img":"https://placehold.co/200x320", "autor":"Hermann Hesse","titulo":"Siddhartha","estado":"⏳","genero":"Novela filosófica","ano":1922,"notas":"","paginas":152,"tfdms":1},
+  { "img":"https://placehold.co/200x320", "autor":"Jennifer Hillier","titulo":"The butcher","estado":"⏳","genero":"Thriller","ano":2014,"notas":"","paginas":352,"tfdms":5},
+  { "img":"https://placehold.co/200x320", "autor":"Catherine Ryan Howard","titulo":"El hombre nada","estado":"⏳","genero":"Thriller psicológico","ano":2023,"notas":"","paginas":320,"tfdms":5},
+  { "img":"https://placehold.co/200x320", "autor":"Henry James","titulo":"Otra vuelta de tuerca","estado":"⏳","genero":"Horror","ano":1898,"notas":"","paginas":96,"tfdms":5},
+  { "img":"https://placehold.co/200x320", "autor":"Lisa Jewell","titulo":"Then she was gone","estado":"⏳","genero":"Thriller psicológico","ano":2017,"notas":"","paginas":357,"tfdms":5},
+  { "img":"https://placehold.co/200x320", "autor":"Stephen King","titulo":"El cementerio de animales","estado":"⏳","genero":"Horror","ano":1983,"notas":"","paginas":374,"tfdms":6},
+  { "img":"https://placehold.co/200x320", "autor":"Pierre Lemaitre","titulo":"Alex","estado":"⏳","genero":"Novela policíaca","ano":2011,"notas":"","paginas":340,"tfdms":7},
+  { "img":"https://placehold.co/200x320", "autor":"Pierre Lemaitre","titulo":"Rosy & John","estado":"⏳","genero":"Novela policíaca","ano":2011,"notas":"","paginas":80,"tfdms":5},
+  { "img":"https://placehold.co/200x320", "autor":"Pierre Lemaitre","titulo":"Camille","estado":"⏳","genero":"Novela policíaca","ano":2012,"notas":"","paginas":320,"tfdms":6},
+  { "img":"https://placehold.co/200x320", "autor":"Pierre Lemaitre","titulo":"Trois jours et une vie","estado":"⏳","genero":"Thriller","ano":2016,"notas":"En francés","paginas":218,"tfdms":6},
+  { "img":"https://placehold.co/200x320", "autor":"Liu Cixin","titulo":"El problema de los tres cuerpos","estado":"⏳","genero":"Distopía","ano":2008,"notas":"","paginas":400,"tfdms":2},
+  { "img":"https://placehold.co/200x320", "autor":"Cormac McCarthy","titulo":"La carretera","estado":"⏳","genero":"Distopía","ano":2006,"notas":"","paginas":209,"tfdms":7},
+  { "img":"https://placehold.co/200x320", "autor":"Freida McFadden","titulo":"The housemaid","estado":"⏳","genero":"Thriller psicológico","ano":2022,"notas":"","paginas":336,"tfdms":4},
+  { "img":"https://placehold.co/200x320", "autor":"Haruki Murakami","titulo":"Kafka on the shore","estado":"⏳","genero":"Realismo mágico","ano":2002,"notas":"","paginas":505,"tfdms":3},
+  { "img":"https://placehold.co/200x320", "autor":"B.A. Paris","titulo":"Behind closed doors","estado":"⏳","genero":"Thriller psicológico","ano":2016,"notas":"","paginas":294,"tfdms":5},
+  { "img":"https://placehold.co/200x320", "autor":"Massimo Pigliucci","titulo":"Cómo ser un estoico","estado":"⏳","genero":"Filosofía / Ensayo","ano":2017,"notas":"","paginas":272,"tfdms":0},
+  { "img":"https://placehold.co/200x320", "autor":"Jason Rekulak","titulo":"Hidden pictures","estado":"⏳","genero":"Thriller","ano":2022,"notas":"","paginas":352,"tfdms":4},
+  { "img":"https://placehold.co/200x320", "autor":"Dolores Reyes","titulo":"Cometierra","estado":"⏳","genero":"Realismo mágico","ano":2019,"notas":"","paginas":128,"tfdms":4},
+  { "img":"https://placehold.co/200x320", "autor":"Pablo Rivero","titulo":"La cría","estado":"⏳","genero":"Thriller psicológico","ano":2022,"notas":"","paginas":288,"tfdms":5},
+  { "img":"https://placehold.co/200x320", "autor":"José Rodrigues dos Santos","titulo":"O sexto sentido","estado":"⏳","genero":"Thriller","ano":2025,"notas":"","paginas":400,"tfdms":2},
+  { "img":"https://placehold.co/200x320", "autor":"A.J. Ryan","titulo":"Niebla roja","estado":"⏳","genero":"Thriller","ano":2023,"notas":"","paginas":384,"tfdms":4},
+  { "img":"https://placehold.co/200x320", "autor":"Riley Sager","titulo":"The only one left","estado":"⏳","genero":"Thriller psicológico","ano":2023,"notas":"","paginas":384,"tfdms":4},
+  { "img":"https://placehold.co/200x320", "autor":"Riley Sager","titulo":"Middle of the night","estado":"⏳","genero":"Thriller psicológico","ano":2024,"notas":"","paginas":352,"tfdms":4},
+  { "img":"https://placehold.co/200x320", "autor":"Neal Shusterman","titulo":"Siega","estado":"⏳","genero":"Distopía","ano":2016,"notas":"","paginas":470,"tfdms":6},
+  { "img":"https://placehold.co/200x320", "autor":"Karin Slaughter","titulo":"Pretty girls","estado":"⏳","genero":"Thriller","ano":2015,"notas":"","paginas":668,"tfdms":8},
+  { "img":"https://placehold.co/200x320", "autor":"Sun Tzu","titulo":"El arte de la guerra","estado":"⏳","genero":"Filosofía / Ensayo","ano":-500,"ano_texto":"~siglo V a.C.","notas":"","paginas":460,"tfdms":0},
+  { "img":"https://placehold.co/200x320", "autor":"Winston Thomas","titulo":"Darker than fiction","estado":"⏳","genero":"No ficción","ano":2025,"notas":"","paginas":304,"tfdms":5},
+  { "img":"https://placehold.co/200x320", "autor":"Lev Tolstói","titulo":"La muerte de Iván Ilich","estado":"⏳","genero":"Novela filosófica","ano":1886,"notas":"","paginas":128,"tfdms":5},
+  { "img":"https://placehold.co/200x320", "autor":"John Kennedy Toole","titulo":"La conjura de los necios","estado":"⏳","genero":"Comedia satírica","ano":1980,"notas":"","paginas":405,"tfdms":1},
+  { "img":"https://placehold.co/200x320", "autor":"Elias Witherow","titulo":"The black farm","estado":"⏳","genero":"Horror","ano":2017,"notas":"","paginas":282,"tfdms":7},
+  { "img":"https://placehold.co/200x320", "autor":"Hanya Yanagihara","titulo":"A little life","estado":"⏳","genero":"Novela literaria / Drama","ano":2015,"notas":"","paginas":720,"tfdms":8},
+  { "img":"https://placehold.co/200x320", "autor":"Yevgeny Zamyatin","titulo":"We","estado":"⏳","genero":"Distopía","ano":1924,"notas":"","paginas":232,"tfdms":7},
+  { "img":"https://placehold.co/200x320", "autor":"Gillian Flynn","titulo":"Gone Girl","estado":"⏳","genero":"Thriller psicológico","ano":2012,"notas":"","paginas":422,"tfdms":6},
+  { "img":"https://placehold.co/200x320", "autor":"Gillian Flynn","titulo":"Sharp Objects","estado":"⏳","genero":"Thriller psicológico / Horror","ano":2006,"notas":"","paginas":254,"tfdms":8},
+  { "img":"https://placehold.co/200x320", "autor":"Jack Ketchum","titulo":"Temporada baja","estado":"⏳","genero":"Horror","ano":1980,"notas":"","paginas":220,"tfdms":9},
+  { "img":"https://placehold.co/200x320", "autor":"Shirley Jackson","titulo":"The Haunting of Hill House","estado":"⏳","genero":"Horror","ano":1959,"notas":"","paginas":246,"tfdms":5},
+  { "img":"https://placehold.co/200x320", "autor":"Lionel Shriver","titulo":"Tenemos que hablar de Kevin","estado":"⏳","genero":"Horror","ano":2003,"notas":"","paginas":400,"tfdms":9},
+  { "img":"https://placehold.co/200x320", "autor":"Sarah Pinborough","titulo":"Behind Her Eyes","estado":"⏳","genero":"Thriller psicológico","ano":2017,"notas":"","paginas":336,"tfdms":5},
+  { "img":"https://placehold.co/200x320", "autor":"Colleen Hoover","titulo":"Verity","estado":"⏳","genero":"Thriller psicológico","ano":2018,"notas":"","paginas":336,"tfdms":7},
+  { "img":"https://placehold.co/200x320", "autor":"Bret Easton Ellis","titulo":"American Psycho","estado":"⏳","genero":"Horror","ano":1991,"notas":"","paginas":399,"tfdms":9},
+  { "img":"https://placehold.co/200x320", "autor":"Patrick Süskind","titulo":"El perfume","estado":"⏳","genero":"Horror","ano":1985,"notas":"","paginas":263,"tfdms":8},
+  { "img":"https://placehold.co/200x320", "autor":"John Fowles","titulo":"The Collector","estado":"⏳","genero":"Thriller psicológico","ano":1963,"notas":"","paginas":283,"tfdms":8},
+  { "img":"https://placehold.co/200x320", "autor":"Truman Capote","titulo":"In Cold Blood","estado":"⏳","genero":"No ficción","ano":1966,"notas":"","paginas":343,"tfdms":8},
+  { "img":"https://placehold.co/200x320", "autor":"Silvia Moreno-Garcia","titulo":"Mexican Gothic","estado":"⏳","genero":"Horror","ano":2020,"notas":"","paginas":301,"tfdms":6},
+  { "img":"https://placehold.co/200x320", "autor":"Han Kang","titulo":"La vegetariana","estado":"⏳","genero":"Novela literaria / Drama","ano":2007,"paginas":188,"notas":"","tfdms":8},
+  { "img":"https://placehold.co/200x320", "autor":"Courtney Summers","titulo":"Sadie","estado":"⏳","genero":"Thriller","ano":2018,"paginas":310,"notas":"","tfdms":7},
+  { "img":"https://placehold.co/200x320", "autor":"Ryu Murakami","titulo":"Pírcing","estado":"⏳","genero":"Horror psicológico","ano":1994,"paginas":192,"notas":"","tfdms":9},
+  { "img":"https://placehold.co/200x320", "autor":"William Golding","titulo":"El señor de las moscas","estado":"⏳","genero":"Distopía","ano":1954,"paginas":225,"notas":"","tfdms":8},
+  { "img":"https://placehold.co/200x320", "autor":"Ryu Murakami","titulo":"Sopa de miso","estado":"⏳","genero":"Horror psicológico","ano":1997,"paginas":192,"notas":"","tfdms":8},
+  { "img":"https://placehold.co/200x320", "autor":"Angela Carter","titulo":"La cámara sangrienta","estado":"⏳","genero":"Horror","ano":1979,"paginas":200,"notas":"","tfdms":7},
+  { "img":"https://placehold.co/200x320", "autor":"Cormac McCarthy","titulo":"Meridiano de sangre","estado":"⏳","genero":"Horror","ano":1985,"paginas":337,"notas":"","tfdms":9},
+  { "img":"https://placehold.co/200x320", "autor":"Kazuo Ishiguro","titulo":"Nunca me abandones","estado":"⏳","genero":"Distopía","ano":2005,"paginas":288,"notas":"","tfdms":7},
+  { "img":"https://placehold.co/200x320", "autor":"José Saramago","titulo":"Ensayo sobre la ceguera","estado":"⏳","genero":"Distopía","ano":1995,"paginas":310,"notas":"","tfdms":8}
+
+];
+
+/* ========================================================= */
+
+const statusClassMap = {
+  "✅": "status-leido",
+  "📖": "status-leyendo",
+  "⏳": "status-noleido"
+};
+const statusLabelMap = {
+  "✅": "Leído",
+  "📖": "Leyendo",
+  "⏳": "No leído"
+};
+
+function displayAno(b){
+  return b.ano_texto ? b.ano_texto : String(b.ano);
+}
+
+function tfdmsBar(score) {
+  if (score === undefined || score === null) return '—';
+  const colors = ['#e9ecef','#e9ecef','#dee2e6','#ced4da','#adb5bd','#f4a261','#e76f51','#e63946','#c1121f','#780000','#3d0000'];
+  const s = score || 0;
+  return '<span style="display:inline-flex;align-items:center;gap:6px;">' +
+    '<span style="display:inline-block;width:' + (s*16) + 'px;height:10px;border-radius:4px;background:' + colors[s] + ';transition:width 0.3s;"></span>' +
+    '<span style="font-weight:600;font-size:0.85rem;color:' + colors[s] + '">' + s + '</span>' +
+    '</span>';
+}
+
+/* Separates a leading run of ⭐ from the rest of `notas`,
+   so the star rating and the written review can be used independently. */
+function parseNotas(notas){
+  const raw = notas || '';
+  const match = raw.match(/^(⭐+)\s*([\s\S]*)$/);
+  if (match) {
+    return { stars: match[1].length, review: match[2].trim() };
+  }
+  return { stars: 0, review: raw.trim() };
+}
+
+function starString(n){
+  return n > 0 ? '★'.repeat(n) + '☆'.repeat(Math.max(0, 5 - n)) : '';
+}
+
+/* Strips accents and returns the uppercase first letter of a name,
+   so "Éire" and "Érase" both index under "E". */
+function firstLetter(str){
+  return (str || '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .trim()
+    .charAt(0)
+    .toUpperCase();
+}
+
+function slugify(str){
+  return (str || '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/(^-|-$)/g, '');
+}
+
+/* Small deterministic hash, used to give each spine a stable
+   (but varied) height and color without needing extra data fields. */
+function hashCode(str){
+  let h = 0;
+  for (let i = 0; i < (str || '').length; i++) {
+    h = (h * 31 + str.charCodeAt(i)) | 0;
+  }
+  return Math.abs(h);
+}
+
+/* Groups an array of books by author, preserving/using the given order. */
+function groupByAuthor(list){
+  const map = new Map();
+  list.forEach(b => {
+    if (!map.has(b.autor)) map.set(b.autor, []);
+    map.get(b.autor).push(b);
+  });
+  return map;
+}
+
+/* =========================================================
+   TABLE VIEW — nested/grouped by author using rowspan
+   ========================================================= */
+let currentSort = { field: 'autor', dir: 'asc', authorDir: 'asc' };
+
+function compareValues(a, b, field, type){
+  let valA, valB;
+  if (type === 'number') {
+    valA = a[field] !== undefined ? Number(a[field]) : 0;
+    valB = b[field] !== undefined ? Number(b[field]) : 0;
+  } else {
+    valA = (a[field] || '').toLowerCase();
+    valB = (b[field] || '').toLowerCase();
+  }
+  if (valA < valB) return -1;
+  if (valA > valB) return 1;
+  return 0;
+}
+
+function renderTable(){
+  const tbody = document.querySelector('#bookTable tbody');
+  tbody.innerHTML = '';
+
+  // group first, always by author
+  const groups = groupByAuthor(books);
+  let authorNames = [...groups.keys()];
+
+  // order the groups themselves
+  authorNames.sort((a, b) => {
+    const cmp = a.toLowerCase() < b.toLowerCase() ? -1 : (a.toLowerCase() > b.toLowerCase() ? 1 : 0);
+    return currentSort.authorDir === 'asc' ? cmp : -cmp;
+  });
+
+  authorNames.forEach(author => {
+    const groupBooks = [...groups.get(author)];
+    // sort books inside the group by whichever column is active (unless it's the author column itself)
+    if (currentSort.field !== 'autor') {
+      const th = document.querySelector('th[data-field="' + currentSort.field + '"]');
+      const type = th ? th.dataset.type : 'text';
+      groupBooks.sort((a, b) => {
+        const cmp = compareValues(a, b, currentSort.field, type);
+        return currentSort.dir === 'asc' ? cmp : -cmp;
+      });
+    }
+
+    groupBooks.forEach((b, idx) => {
+      const tr = document.createElement('tr');
+      if (idx === 0) tr.classList.add('group-start');
+      const cls = statusClassMap[b.estado] || '';
+
+      let rowHtml = '';
+      if (idx === 0) {
+        rowHtml += '<td class="author" rowspan="' + groupBooks.length + '">' + author + '</td>';
+      }
+      rowHtml +=
+        '<td>' + b.titulo + '</td>' +
+        '<td class="' + cls + '">' + b.estado + '</td>' +
+        '<td>' + b.genero + '</td>' +
+        '<td>' + displayAno(b) + '</td>' +
+        '<td>' + (b.paginas || '—') + '</td>' +
+        '<td>' + tfdmsBar(b.tfdms) + '</td>' +
+        '<td class="notas">' + (b.notas || '') + '</td>';
+      tr.innerHTML = rowHtml;
+      tbody.appendChild(tr);
+    });
+  });
+
+  renderSubtitle();
+}
+
+function renderSubtitle(){
+  const leidos = books.filter(b => b.estado === '✅');
+  const porLeer = books.filter(b => b.estado === '⏳' || b.estado === '📖');
+  const paginasLeidas = leidos.reduce((s, b) => s + (b.paginas || 0), 0);
+  const paginasPorLeer = porLeer.reduce((s, b) => s + (b.paginas || 0), 0);
+  const numAutores = new Set(books.map(b => b.autor)).size;
+  document.getElementById('subtitle').innerHTML =
+    books.length + ' libros de ' + numAutores + ' autores &nbsp;·&nbsp; ' +
+    '✅ ' + leidos.length + ' leídos <span style="color:#1a7f37;font-weight:600">(' + (Math.round(paginasLeidas/10)*10).toLocaleString() + ' págs.)</span>' +
+    ' &nbsp;·&nbsp; ' +
+    '⏳ ' + porLeer.length + ' por leer <span style="color:#6b7280;font-weight:600">(' + (Math.round(paginasPorLeer/10)*10).toLocaleString() + ' págs.)</span>' +
+    ' &nbsp;·&nbsp; haz clic en una cabecera para ordenar';
+}
+
+document.querySelectorAll('#bookTable th').forEach(th => {
+  th.addEventListener('click', () => {
+    const field = th.dataset.field;
+
+    if (field === 'autor') {
+      currentSort.authorDir = currentSort.field === 'autor' && currentSort.authorDir === 'asc' ? 'desc' : 'asc';
+      currentSort.field = 'autor';
+    } else {
+      currentSort.dir = currentSort.field === field && currentSort.dir === 'asc' ? 'desc' : 'asc';
+      currentSort.field = field;
+    }
+
+    document.querySelectorAll('#bookTable th').forEach(h => {
+      h.classList.remove('sorted-asc', 'sorted-desc');
+      h.querySelector('.arrow').textContent = '⇕';
+    });
+    const dirUsed = field === 'autor' ? currentSort.authorDir : currentSort.dir;
+    th.classList.add(dirUsed === 'asc' ? 'sorted-asc' : 'sorted-desc');
+    th.querySelector('.arrow').textContent = dirUsed === 'asc' ? '↑' : '↓';
+
+    renderTable();
+  });
+});
+
+/* =========================================================
+   GALLERY VIEW — cards grouped by author, click for review
+   ========================================================= */
+function renderGallery(){
+  const wrap = document.getElementById('galleryWrap');
+  wrap.innerHTML = '';
+
+  const groups = groupByAuthor(books);
+  const authorNames = [...groups.keys()].sort((a, b) => a.toLowerCase().localeCompare(b.toLowerCase()));
+
+  authorNames.forEach(author => {
+    const groupBooks = groups.get(author);
+
+    const section = document.createElement('div');
+    section.className = 'author-group';
+    section.id = 'author-' + slugify(author);
+    section.dataset.letter = firstLetter(author);
+
+    const heading = document.createElement('div');
+    heading.className = 'author-heading';
+    heading.innerHTML = '<h2>' + author + '</h2><span class="count">' +
+      groupBooks.length + (groupBooks.length === 1 ? ' libro' : ' libros') + '</span>';
+    section.appendChild(heading);
+
+    const grid = document.createElement('div');
+    grid.className = 'card-grid';
+
+    groupBooks.forEach(b => {
+      const { stars } = parseNotas(b.notas);
+      const card = document.createElement('div');
+      card.className = 'book-card';
+      card.innerHTML =
+        '<img class="cover" src="' + (b.img || '') + '" alt="' + b.titulo + '" loading="lazy" ' +
+          'onerror="this.style.opacity=0.3;">' +
+        '<div class="info">' +
+          '<span class="status-badge">' + b.estado + ' ' + statusLabelMap[b.estado] + '</span>' +
+          '<div class="title">' + b.titulo + '</div>' +
+          (stars > 0
+            ? '<div class="stars">' + starString(stars) + '</div>'
+            : '<div class="stars empty">Sin valorar</div>') +
+        '</div>';
+      card.addEventListener('click', () => openModal(b));
+      grid.appendChild(card);
+    });
+
+    section.appendChild(grid);
+    wrap.appendChild(section);
+  });
+
+  buildAZNav();
+  setupScrollSpy();
+}
+
+/* =========================================================
+   A–Z SCROLLSPY
+   ========================================================= */
+let azObserver = null;
+
+function buildAZNav(){
+  const nav = document.getElementById('azNav');
+  nav.innerHTML = '';
+  const present = new Set(
+    [...document.querySelectorAll('.author-group')].map(sec => sec.dataset.letter)
+  );
+  const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
+
+  letters.forEach(letter => {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.textContent = letter;
+    btn.dataset.letter = letter;
+    if (!present.has(letter)) {
+      btn.classList.add('disabled');
+    } else {
+      btn.addEventListener('click', () => scrollToLetter(letter));
+    }
+    nav.appendChild(btn);
+  });
+}
+
+function scrollToLetter(letter){
+  const target = document.querySelector('.author-group[data-letter="' + letter + '"]');
+  if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function highlightLetter(letter){
+  document.querySelectorAll('.az-nav button').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.letter === letter);
+  });
+}
+
+function setupScrollSpy(){
+  if (azObserver) azObserver.disconnect();
+  const sections = document.querySelectorAll('.author-group');
+  if (!sections.length) return;
+
+  azObserver = new IntersectionObserver((entries) => {
+    const visible = entries.filter(e => e.isIntersecting);
+    if (!visible.length) return;
+    visible.sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top);
+    highlightLetter(visible[0].target.dataset.letter);
+  }, { rootMargin: '-90px 0px -70% 0px', threshold: 0 });
+
+  sections.forEach(sec => azObserver.observe(sec));
+
+  // highlight the first available letter immediately, before any scrolling happens
+  highlightLetter(sections[0].dataset.letter);
+}
+
+/* =========================================================
+   LIBRARY VIEW — books as spines on a shelf, alphabetical by
+   title, with a bookend "letter card" wherever the first
+   letter changes.
+   ========================================================= */
+const SPINE_COLORS = ['#4a5568','#744210','#742a2a','#22543d','#2c5282','#553c9a','#97266d','#975a16','#2a4365','#5c3d17'];
+const TFDMS_COLORS = ['#e9ecef','#e9ecef','#dee2e6','#ced4da','#adb5bd','#f4a261','#e76f51','#e63946','#c1121f','#780000','#3d0000'];
+
+function renderLibrary(){
+  const wrap = document.getElementById('shelfWrap');
+  wrap.innerHTML = '';
+
+  const sorted = [...books].sort((a, b) => {
+    const ka = firstLetter(a.autor) + (a.autor || '').toLowerCase() + (a.titulo || '').toLowerCase();
+    const kb = firstLetter(b.autor) + (b.autor || '').toLowerCase() + (b.titulo || '').toLowerCase();
+    return ka < kb ? -1 : (ka > kb ? 1 : 0);
+  });
+
+  let lastLetter = null;
+  sorted.forEach((b, i) => {
+    const letter = firstLetter(b.autor);
+    if (letter !== lastLetter) {
+      const letterEl = document.createElement('div');
+      letterEl.className = 'shelf-letter';
+      letterEl.textContent = letter;
+      wrap.appendChild(letterEl);
+      lastLetter = letter;
+    }
+
+    const h = hashCode(b.titulo + b.autor);
+    const height = 172 + (h % 40);              // 172–211px, varied "book heights"
+    const width = Math.min(46, Math.max(24, 18 + (b.paginas || 200) / 26)); // thickness from page count
+    const fontSize = width < 30 ? 10 : 11.5;
+    const color = SPINE_COLORS[h % SPINE_COLORS.length];
+    const tfColor = TFDMS_COLORS[b.tfdms || 0];
+    const isRead = b.estado === '✅';
+
+    const spine = document.createElement('div');
+    spine.className = 'spine' + (isRead ? '' : ' spine-unread');
+    spine.style.height = height + 'px';
+    spine.style.width = width + 'px';
+    spine.style.background = color;
+    spine.title = b.titulo + ' — ' + b.autor;
+    spine.innerHTML =
+      '<span class="spine-status">' + b.estado + '</span>' +
+      '<span class="spine-title" style="font-size:' + fontSize + 'px;">' + b.titulo + ' — ' + b.autor + '</span>' +
+      '<span class="spine-tfdms" style="background:' + tfColor + ';"></span>';
+    spine.addEventListener('click', () => openModal(b));
+    wrap.appendChild(spine);
+  });
+}
+
+/* =========================================================
+   MODAL
+   ========================================================= */
+function openModal(b){
+  const { stars, review } = parseNotas(b.notas);
+  document.getElementById('modalTitle').textContent = b.titulo;
+  document.getElementById('modalAuthor').textContent = b.autor;
+  document.getElementById('modalMeta').innerHTML =
+    '<span>' + displayAno(b) + '</span>' +
+    '<span>' + (b.paginas || '—') + ' págs.</span>' +
+    '<span>' + b.genero + '</span>' +
+    '<span>' + b.estado + ' ' + statusLabelMap[b.estado] + '</span>' +
+    '<span>TF-DMS ' + (b.tfdms ?? '—') + '</span>';
+  document.getElementById('modalStars').textContent = starString(stars);
+  document.getElementById('modalReview').innerHTML = review;
+  document.getElementById('modalOverlay').classList.add('active');
+}
+function closeModal(){
+  document.getElementById('modalOverlay').classList.remove('active');
+}
+document.getElementById('modalClose').addEventListener('click', closeModal);
+document.getElementById('modalOverlay').addEventListener('click', (e) => {
+  if (e.target.id === 'modalOverlay') closeModal();
+});
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') closeModal();
+});
+
+/* =========================================================
+   TABS
+   ========================================================= */
+document.querySelectorAll('.tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('view-' + btn.dataset.view).classList.add('active');
+
+    const azNav = document.getElementById('azNav');
+    azNav.classList.toggle('visible', btn.dataset.view === 'gallery');
+    if (btn.dataset.view === 'gallery') setupScrollSpy();
+  });
+});
+
+/* =========================================================
+   INIT
+   ========================================================= */
+renderTable();
+renderGallery();
+renderLibrary();
+</script>
+</body>
+</html>
