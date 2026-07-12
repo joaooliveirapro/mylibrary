@@ -1,6 +1,8 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
 <meta charset="UTF-8">
 <title>Mi librería</title>
 <style>
@@ -138,7 +140,7 @@
   }
   .card-grid{
     display:grid;
-    grid-template-columns:repeat(auto-fill, minmax(150px, 1fr));
+    grid-template-columns:repeat(auto-fill, minmax(175px, 1fr));
     gap:18px;
   }
   .book-card{
@@ -231,7 +233,7 @@
   }
   @media (max-width: 700px){
     .az-nav{ right:4px; padding:6px 3px; }
-    .az-nav button{ width:16px; font-size:0.6rem; }
+    .az-nav button{ font-size:0.8rem; }
   }
 
   /* ---------- Library (shelf) view ---------- */
@@ -241,14 +243,21 @@
     display:flex;
     flex-wrap:wrap;
     align-items:flex-end;
-    gap:6px;
+    align-content:flex-start;
+    row-gap:48px;
+    column-gap:8px;
     padding:20px 16px 10px;
-    background:
-      repeating-linear-gradient(to bottom,
-        transparent 0, transparent 205px,
-        #8a5a34 205px, #8a5a34 213px,
-        #6b4423 213px, #6b4423 216px);
-    border-radius:8px;
+    position:relative;
+  }
+  .shelf-board{
+    position:absolute;
+    left:16px;
+    right:16px;
+    height:11px;
+    background:linear-gradient(to bottom, #8a5a34 0 8px, #6b4423 8px 11px);
+    border-radius:2px;
+    box-shadow:0 3px 5px rgba(0,0,0,0.25);
+    z-index:0;
   }
   .shelf-letter{
     align-self:flex-end;
@@ -264,7 +273,8 @@
     font-weight:800;
     border-radius:6px 6px 2px 2px;
     box-shadow:0 2px 4px rgba(0,0,0,0.25) inset, 0 3px 6px rgba(0,0,0,0.2);
-    margin-bottom:9px;
+    position:relative;
+    z-index:1;
   }
   .spine{
     align-self:flex-end;
@@ -272,13 +282,14 @@
     display:flex;
     flex-direction:column;
     align-items:center;
-    justify-content:center;
+    justify-content:flex-start;
+    height:fit-content;
     border-radius:3px 3px 1px 1px;
     box-shadow:inset -2px 0 4px rgba(0,0,0,0.25), inset 2px 0 3px rgba(255,255,255,0.15), 0 3px 6px rgba(0,0,0,0.22);
     cursor:pointer;
     position:relative;
-    margin-bottom:9px;
-    padding:8px 0;
+    z-index:1;
+    padding:8px 0 10px;
     overflow:hidden;
     transition:transform .15s;
   }
@@ -287,29 +298,28 @@
     writing-mode: vertical-rl;
     text-orientation: mixed;
     white-space:nowrap;
-    overflow:hidden;
-    text-overflow:ellipsis;
-    max-height:calc(100% - 20px);
-    margin-top:16px;
     color:#fff;
     font-weight:600;
     letter-spacing:0.2px;
     text-shadow:0 1px 2px rgba(0,0,0,0.35);
   }
   .spine .spine-status{
-    position:absolute;
-    top:5px;
-    left:50%;
-    transform:translateX(-50%);
     font-size:0.6rem;
     line-height:1;
+    margin-bottom:2px;
+  }
+  .spine .spine-stars{
+    font-size:0.55rem;
+    color:#ffd166;
+    letter-spacing:1px;
+    white-space:nowrap;
+    text-shadow:0 1px 1px rgba(0,0,0,0.4);
+    margin-top:6px;
   }
   .spine .spine-tfdms{
-    position:absolute;
-    bottom:0;
-    left:0;
-    right:0;
-    height:5px;
+    width:100%;
+    height:4px;
+    margin-top:6px;
   }
   .spine.spine-unread{
     filter:grayscale(0.9) brightness(1.15);
@@ -378,20 +388,14 @@
 
 <h1>📚 Mi librería</h1>
 <p class="subtitle" id="subtitle"></p>
-<p class="legend">
-  <span>✅ Leído</span>
-  <span>📖 Leyendo</span>
-  <span>⏳ No leído</span>
-</p>
-
 <div class="tabs">
-  <button class="tab-btn active" data-view="table">Tabla</button>
+  <button class="tab-btn active" data-view="library">Mí Librería</button>
   <button class="tab-btn" data-view="gallery">Galería</button>
-  <button class="tab-btn" data-view="library">Library</button>
+  <button class="tab-btn" data-view="table">Tabla</button>
 </div>
 
 <!-- ============ TABLE VIEW ============ -->
-<div class="view active" id="view-table">
+<div class="view" id="view-table">
   <table id="bookTable">
     <thead>
       <tr>
@@ -416,7 +420,7 @@
 </div>
 
 <!-- ============ LIBRARY VIEW (bookshelf) ============ -->
-<div class="view" id="view-library">
+<div class="view active" id="view-library">
   <div class="shelf-wrap" id="shelfWrap"></div>
 </div>
 
@@ -441,8 +445,6 @@
      ano, ano_texto (opcional), paginas, tfdms, notas, img
    ========================================================= */
 const books = [
-
-  /* ── LEÍDOS ── */
   { "img":"https://placehold.co/200x320", "autor":"Agustina Bazterrica","titulo":"Cadáver exquisito","estado":"✅","genero":"Horror","ano":2017,"notas":"⭐⭐⭐⭐⭐ <p>Agustina logró incomodarme lo suficiente para tener que reposar el libro, con certa frecuencia, y pensar en lo que estaba ocurriendo.</p><p>La ironía de celebrar una nueva vida con un asado de carne 'especial' de bebé. Lo más desconcertante que he leído.</p>","paginas":192,"tfdms":9},
   { "img":"https://placehold.co/200x320", "autor":"Joël Dicker","titulo":"La verdad sobre el caso de Harry Quebert","estado":"✅","genero":"Thriller","ano":2012,"notas":"⭐⭐ <p>El final llegó demasiado rápido, como si el escritor hubiera querido terminarlo lo antes posible, cómo si él mismo se hubiera aburrido de la historia.</p><p>Mucho suspense y intriga - a veces, incluso, con repeticiones interminables - para un desarollo anémico e insatisfactorio.</p>","paginas":790,"tfdms":2},
   { "img":"https://placehold.co/200x320", "autor":"Jacqueline Harpman","titulo":"I who have never known men","estado":"✅","genero":"Distopía","ano":1995,"notas":"⭐⭐⭐⭐ <p>Incredibly sad - no answers, ever. She died without answers to her most mundane life questions: what happened and why? what was her name? where was she? - despite all her walking, perserverance and, at times, faith.</p><p>Luckily, she's now in peace, freed from questioning her own existence, while we - her readers, who have inherited her thoughts - have no option but to carry on and cope with the burden of unsatisfiable curiosity, as we walk poetically across the vast plain of time toward our own death.</p><p>As Dostoevsky put it: 'All this effort to die on a random Wednesday'.</p>","paginas":185,"tfdms":6},
@@ -455,8 +457,6 @@ const books = [
   { "img":"https://placehold.co/200x320", "autor":"Albert Camus","titulo":"El extranjero","estado":"✅","genero":"Novela filosófica","ano":1942,"notas":"⭐⭐⭐⭐ <p>Si algo aprendí al haber leído este líbro, es que al llevarse la vida de una manera tan nihílista o desinteresada, uno termina perdiendo la cabeza.</p> <p>La farza del juício social, donde el crímen más severo es el de no reaccionar, de llevarse la vida como un absurdo sin sentido ni razón, y el más culpable el estoico que se resigna a crear o mantener ninguna apariencia, pese al muerto a cinco tiros.</p> <p>Una sociedad que no está lista, ni para la verdad, ni mucho menos para la ausencia de la mentira.</p>","paginas":119,"tfdms":6},
   { "img":"https://placehold.co/200x320", "autor":"Freida McFadden","titulo":"Nunca mientas","estado":"✅","genero":"Thriller psicológico","ano":2022,"notas":"⭐⭐⭐ <p>La primera mitad contiene demasiados <i>clichets</i> que me resultaron muy aburridos y obvios. A lo mejor es su estilo de escrita... espero que no! </p><p>La segunda mitad estuvo muy interesante. El giro dramatico de los acontecimientos fue inesperado y de cierta manera aterrador.</p><p>Le regalo 4 estrellas pues, para mí, le faltó un poco más de originalidad en ciertos puntos: los <i>clichets</i> que todos usan, el motivo de la muerte de los amigos y del ex, el motivo por lo cuál la Dra se quería encargar de E.J. - todo ello me pareció muy ordinário.</p><p>El final peca por lo mismo - viven felices para siempre, con dos muertos en el jardin que les abonan sus plantas.</p><p>Cuánto más pienso en ello, menos me gusta... dejémoslo así. Voy a por La Sirvienta.</p>","paginas":352,"tfdms":4},
   { "img":"https://placehold.co/200x320", "autor":"Pierre Lemaitre","titulo":"Irène","estado":"✅","genero":"Novela policíaca","ano":2006,"notas":"⭐⭐⭐⭐⭐ <p>Lo siento; le pido disculpas al autor por haber empezado el libro con expectativas distintas, pidiéndole y cobrándole algo que nunca me debía.</p><p>Me siento orgulloso por haber tenido coraje y constancia de leer. He tenido fe que el autor haría justicia a las advertencias que me han brindado y que me llevaron a coger su libro.</p><p>Superó todas mis expectativas del <i>plot twist</i>, de tal manera que veo en mi reacción de repudio y horror al terminarlo de leer, la ironía de mi constancia y fe.</p><p>Lo único que me queda por preguntar es: por qué me hago esto? 🫠</p>","paginas":430,"tfdms":7},
-
-  /* ── NO LEÍDOS ── */
   { "img":"https://placehold.co/200x320", "autor":"Margaret Atwood","titulo":"Los testamentos","estado":"⏳","genero":"Distopía","ano":2019,"notas":"","paginas":419,"tfdms":7},
   { "img":"https://placehold.co/200x320", "autor":"John Steinbeck","titulo":"Of mice and men","estado":"⏳","genero":"Novela literaria / Drama","ano":1937,"notas":"","paginas":112,"tfdms":6},
   { "img":"https://placehold.co/200x320", "autor":"Fiódor Dostoyevski","titulo":"The brothers Karamazov","estado":"⏳","genero":"Ficción psicológica","ano":1880,"notas":"","paginas":1130,"tfdms":6},
@@ -534,8 +534,7 @@ const books = [
   { "img":"https://placehold.co/200x320", "autor":"Kazuo Ishiguro","titulo":"Nunca me abandones","estado":"⏳","genero":"Distopía","ano":2005,"paginas":288,"notas":"","tfdms":7},
   { "img":"https://placehold.co/200x320", "autor":"José Saramago","titulo":"Ensayo sobre la ceguera","estado":"⏳","genero":"Distopía","ano":1995,"paginas":310,"notas":"","tfdms":8}
 
-];
-
+]
 /* ========================================================= */
 
 const statusClassMap = {
@@ -694,12 +693,11 @@ function renderSubtitle(){
   const paginasLeidas = leidos.reduce((s, b) => s + (b.paginas || 0), 0);
   const paginasPorLeer = porLeer.reduce((s, b) => s + (b.paginas || 0), 0);
   const numAutores = new Set(books.map(b => b.autor)).size;
-  document.getElementById('subtitle').innerHTML =
-    books.length + ' libros de ' + numAutores + ' autores &nbsp;·&nbsp; ' +
-    '✅ ' + leidos.length + ' leídos <span style="color:#1a7f37;font-weight:600">(' + (Math.round(paginasLeidas/10)*10).toLocaleString() + ' págs.)</span>' +
+  document.getElementById('subtitle').innerHTML = '';
+  document.getElementById('subtitle').innerHTML += '<p>' +  books.length + ' libros de ' + numAutores + ' autores' + '</p>';
+  document.getElementById('subtitle').innerHTML += '<p>' + '✅ ' + leidos.length + ' leídos <span style="color:#1a7f37;font-weight:600">(' + (Math.round(paginasLeidas/10)*10).toLocaleString() + ' págs.)</span>' +
     ' &nbsp;·&nbsp; ' +
-    '⏳ ' + porLeer.length + ' por leer <span style="color:#6b7280;font-weight:600">(' + (Math.round(paginasPorLeer/10)*10).toLocaleString() + ' págs.)</span>' +
-    ' &nbsp;·&nbsp; haz clic en una cabecera para ordenar';
+    '⏳ ' + porLeer.length + ' por leer <span style="color:#6b7280;font-weight:600">(' + (Math.round(paginasPorLeer/10)*10).toLocaleString() + ' págs.)</span>' + '</p>'
 }
 
 document.querySelectorAll('#bookTable th').forEach(th => {
@@ -843,6 +841,22 @@ function setupScrollSpy(){
 const SPINE_COLORS = ['#4a5568','#744210','#742a2a','#22543d','#2c5282','#553c9a','#97266d','#975a16','#2a4365','#5c3d17'];
 const TFDMS_COLORS = ['#e9ecef','#e9ecef','#dee2e6','#ced4da','#adb5bd','#f4a261','#e76f51','#e63946','#c1121f','#780000','#3d0000'];
 
+/* Measures how wide a full 5-star row actually renders (given the fonts
+   and letter-spacing used on .spine-stars), so the thinnest spine is
+   always at least wide enough to show 5 stars without clipping. */
+function measureMinSpineWidth(){
+  const probe = document.createElement('span');
+  probe.className = 'spine-stars';
+  probe.style.position = 'absolute';
+  probe.style.visibility = 'hidden';
+  probe.style.whiteSpace = 'nowrap';
+  probe.textContent = starString(5);
+  document.body.appendChild(probe);
+  const w = probe.getBoundingClientRect().width;
+  document.body.removeChild(probe);
+  return Math.ceil(w) + 10; // small horizontal breathing room so stars never touch the edge
+}
+
 function renderLibrary(){
   const wrap = document.getElementById('shelfWrap');
   wrap.innerHTML = '';
@@ -853,8 +867,14 @@ function renderLibrary(){
     return ka < kb ? -1 : (ka > kb ? 1 : 0);
   });
 
+  const MIN_WIDTH = 48;
+  const MAX_WIDTH = 150; // thickness of the book with the most pages
+  const maxPages = Math.max(...books.map(b => b.paginas || 0), 1);
+  const PAGES_TO_PX = MAX_WIDTH / maxPages; // constant ratio: width is directly proportional to pages
+
   let lastLetter = null;
-  sorted.forEach((b, i) => {
+
+  sorted.forEach((b) => {
     const letter = firstLetter(b.autor);
     if (letter !== lastLetter) {
       const letterEl = document.createElement('div');
@@ -865,26 +885,65 @@ function renderLibrary(){
     }
 
     const h = hashCode(b.titulo + b.autor);
-    const height = 172 + (h % 40);              // 172–211px, varied "book heights"
-    const width = Math.min(46, Math.max(24, 18 + (b.paginas || 200) / 26)); // thickness from page count
-    const fontSize = width < 30 ? 10 : 11.5;
+    const label = b.titulo + ' — ' + b.autor;
+    const { stars } = parseNotas(b.notas);
+    // true proportional thickness: width / pages is the same constant for every book,
+    // except very thin books get floored up to MIN_WIDTH so 5 stars always fit.
+    const pages = b.paginas || 0;
+    const width = Math.max(MIN_WIDTH, pages * PAGES_TO_PX);
+    const fontSize = width < MIN_WIDTH + 8 ? 10 : 11.5;
     const color = SPINE_COLORS[h % SPINE_COLORS.length];
     const tfColor = TFDMS_COLORS[b.tfdms || 0];
     const isRead = b.estado === '✅';
 
     const spine = document.createElement('div');
     spine.className = 'spine' + (isRead ? '' : ' spine-unread');
-    spine.style.height = height + 'px';
     spine.style.width = width + 'px';
     spine.style.background = color;
     spine.title = b.titulo + ' — ' + b.autor;
     spine.innerHTML =
       '<span class="spine-status">' + b.estado + '</span>' +
-      '<span class="spine-title" style="font-size:' + fontSize + 'px;">' + b.titulo + ' — ' + b.autor + '</span>' +
+      '<span class="spine-title" style="font-size:' + fontSize + 'px;">' + label + '</span>' +
+      (stars ? '<span class="spine-stars">' + starString(stars) + '</span>' : '') +
       '<span class="spine-tfdms" style="background:' + tfColor + ';"></span>';
     spine.addEventListener('click', () => openModal(b));
     wrap.appendChild(spine);
   });
+
+  // wait for layout to settle (fonts, fit-content sizing) before measuring rows
+  requestAnimationFrame(() => requestAnimationFrame(drawShelfBoards));
+}
+
+/* Places a wood board under each visually-wrapped row, based on actual
+   rendered positions (so it always lines up regardless of varied spine
+   heights or mixed letter-block sizes). */
+function drawShelfBoards(){
+  const wrap = document.getElementById('shelfWrap');
+  wrap.querySelectorAll('.shelf-board').forEach(el => el.remove());
+
+  const items = [...wrap.children];
+  if (!items.length) return;
+
+  const rows = [];
+  let currentTop = null;
+  items.forEach(el => {
+    const top = el.offsetTop;
+    if (currentTop === null || Math.abs(top - currentTop) > 4) {
+      rows.push([]);
+      currentTop = top;
+    }
+    rows[rows.length - 1].push(el);
+  });
+
+  rows.forEach(row => {
+    const bottom = Math.max(...row.map(el => el.offsetTop + el.offsetHeight));
+    const board = document.createElement('div');
+    board.className = 'shelf-board';
+    board.style.top = (bottom + 18) + 'px'; // roughly centered in the 48px row-gap
+    wrap.appendChild(board);
+  });
+
+  wrap.style.paddingBottom = '20px';
 }
 
 /* =========================================================
@@ -937,6 +996,12 @@ document.querySelectorAll('.tab-btn').forEach(btn => {
 renderTable();
 renderGallery();
 renderLibrary();
+
+let resizeTimer;
+window.addEventListener('resize', () => {
+  clearTimeout(resizeTimer);
+  resizeTimer = setTimeout(drawShelfBoards, 150);
+});
 </script>
 </body>
 </html>
